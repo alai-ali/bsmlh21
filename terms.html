@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Пользовательское соглашение — BSMLH</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #21A038;
+    --green-dark: #0d7a2a;
+    --green-light: #E8F5E9;
+    --text: #1a1a1a;
+    --text2: #6b7280;
+    --border: #e5e7eb;
+    --bg: #f9fafb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .header {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .header-back {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--green-light); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .header-back svg { width: 18px; height: 18px; fill: var(--green); }
+  .logo-icon { width: 26px; height: 26px; background: var(--green); border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+  .logo-icon svg { width: 16px; height: 16px; fill: white; }
+  .header-title { font-size: 15px; font-weight: 600; }
+  .header-date { font-size: 11px; color: var(--text2); margin-left: auto; }
+
+  /* Hero — минималистичный, как Apple */
+  .hero {
+    padding: 40px 24px 32px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    background: white;
+  }
+  .hero-icon { font-size: 36px; margin-bottom: 14px; }
+  .hero h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+  .hero-meta { font-size: 13px; color: var(--text2); }
+
+  .content { max-width: 640px; margin: 0 auto; padding: 0 0 120px; }
+
+  /* Сводка ключевых моментов —  */
+  .summary {
+    background: white;
+    margin: 16px 16px 0;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .summary-header {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .summary-header p { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-bottom: 4px; }
+  .summary-header h2 { font-size: 16px; font-weight: 700; }
+  .summary-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .summary-item:last-child { border-bottom: none; }
+  .summary-emoji { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .summary-text { font-size: 13px; line-height: 1.6; color: #374151; }
+  .summary-text b { font-weight: 600; color: var(--text); }
+
+  /* Разделы — аккордеон */
+  .sections { margin: 12px 16px 0; }
+  .section {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .section-toggle {
+    width: 100%; background: none; border: none; cursor: pointer;
+    padding: 16px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    text-align: left;
+  }
+  .section-toggle-left { display: flex; align-items: center; gap: 12px; }
+  .section-num {
+    width: 26px; height: 26px; border-radius: 8px;
+    background: var(--green); color: white;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .section-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .section-chevron {
+    width: 18px; height: 18px; fill: var(--text2);
+    transition: transform 0.2s ease; flex-shrink: 0;
+  }
+  .section-body {
+    display: none;
+    padding: 0 18px 16px;
+    border-top: 1px solid var(--border);
+  }
+  .section-body.open { display: block; }
+  .section-chevron.open { transform: rotate(180deg); }
+  .section-body p, .section-body li {
+    font-size: 13px; color: #374151; line-height: 1.85;
+  }
+  .section-body ul { list-style: none; padding: 0; margin-top: 10px; }
+  .section-body li { padding: 4px 0 4px 16px; position: relative; }
+  .section-body li::before { content: '•'; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+  .section-body p { margin-top: 10px; }
+
+  /* Фиксированный блок согласия снизу  */
+  .agree-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    padding: 16px 20px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  .agree-links {
+    display: flex; gap: 12px; justify-content: center;
+    margin-bottom: 12px; flex-wrap: wrap;
+  }
+  .agree-links a {
+    font-size: 12px; color: var(--green); text-decoration: none; font-weight: 500;
+  }
+  .agree-btn {
+    width: 100%; padding: 14px;
+    background: var(--green); color: white;
+    border: none; border-radius: 14px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    letter-spacing: -0.2px;
+  }
+  .agree-note {
+    font-size: 11px; color: var(--text2); text-align: center;
+    margin-top: 8px; line-height: 1.5;
+  }
+
+  b { font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <button class="header-back" onclick="window.history.back()">
+    <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+  </button>
+  <div class="logo-icon">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+  </div>
+  <span class="header-title">Соглашение</span>
+  <span class="header-date">01.01.2026</span>
+</div>
+
+<div class="hero">
+  <div class="hero-icon">📋</div>
+  <h1>Пользовательское соглашение</h1>
+  <p class="hero-meta">BSMLH · Последнее обновление: январь 2026</p>
+</div>
+
+<div class="content">
+
+  <!-- Сводка — главное -->
+  <div class="summary">
+    <div class="summary-header">
+      <p>Коротко о главном</p>
+      <h2>Что важно знать</h2>
+    </div>
+    <div class="summary-item">
+      <span class="summary-emoji">🤝</span>
+      <div class="summary-text"><b>BSMLH — платформа .</b> Мы соединяем работников и работодателей, но не являемся стороной сделки между ними.</div>
+    </div>
+    <div class="summary-item">
+      <span class="summary-emoji">🔒</span>
+      <div class="summary-text"><b>Ваш HUID — уникален навсегда.</b> Он привязан к вам и не может быть передан другому человеку.</div>
+    </div>
+    <div class="summary-item">
+      <span class="summary-emoji">🪙</span>
+      <div class="summary-text"><b>Токены — баллы активности,</b> а не ценные бумаги. Их денежная стоимость не гарантирована.</div>
+    </div>
+    <div class="summary-item">
+      <span class="summary-emoji">🚫</span>
+      <div class="summary-text"><b>Мошенничество и накрутки</b> приводят к немедленной блокировке аккаунта.</div>
+    </div>
+    <div class="summary-item">
+      <span class="summary-emoji">🇰🇿</span>
+      <div class="summary-text"><b>Применяется законодательство</b>. Споры — в судах по месту нахождения BSMLH.</div>
+    </div>
+  </div>
+
+  <!-- Разделы — раскрываются по клику -->
+  <div class="sections">
+
+    <div class="section">
+      <button class="section-toggle" onclick="toggle(this)">
+        <div class="section-toggle-left">
+          <div class="section-num">1</div>
+          <span class="section-title">Общие положения</span>
+        </div>
+        <svg class="section-chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+      </button>
+      <div class="section-body">
+        <p>Настоящее Соглашение регулирует отношения между <b>BSMLH (Biometric Security Multi-Function Ledger For Humanity)</b> и любым лицом, использующим Платформу. Используя приложение, вы подтверждаете согласие с данными условиями.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <button class="section-toggle" onclick="toggle(this)">
+        <div class="section-toggle-left">
+          <div class="section-num">2</div>
+          <span class="section-title">Регистрация и аккаунт</span>
+        </div>
+        <svg class="section-chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+      </button>
+      <div class="section-body">
+        <ul>
+          <li>Регистрация требует указания достоверных данных</li>
+          <li>Вы несёте ответственность за сохранность доступа к аккаунту</li>
+          <li>BSMLH вправе заблокировать аккаунт при нарушении Соглашения</li>
+          <li>HUID предоставляется вам в пользование и является собственностью BSMLH</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section">
+      <button class="section-toggle" onclick="toggle(this)">
+        <div class="section-toggle-left">
+          <div class="section-num">3</div>
+          <span class="section-title">Биржа труда</span>
+        </div>
+        <svg class="section-chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+      </button>
+      <div class="section-body">
+        <ul>
+          <li>BSMLH — информационная платформа, не является стороной сделок между пользователями</li>
+          <li>Все вопросы оплаты, качества и сроков пользователи решают самостоятельно</li>
+          <li>BSMLH вправе удалять заказы и отзывы, нарушающие Соглашение</li>
+          <li>BSMLH не несёт ответственности за действия других пользователей</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section">
+      <button class="section-toggle" onclick="toggle(this)">
+        <div class="section-toggle-left">
+          <div class="section-num">4</div>
+          <span class="section-title">Запрещённые действия</span>
+        </div>
+        <svg class="section-chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+      </button>
+      <div class="section-body">
+        <ul>
+          <li>Размещение ложной или вводящей в заблуждение информации</li>
+          <li>Мошенничество, спам и иные незаконные действия</li>
+          <li>Фиктивные аккаунты и накрутка рейтинга или токенов</li>
+          <li>Копирование контента Платформы без разрешения BSMLH</li>
+          <li>Попытки взлома или нарушения работы Платформы</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section">
+      <button class="section-toggle" onclick="toggle(this)">
+        <div class="section-toggle-left">
+          <div class="section-num">5</div>
+          <span class="section-title">Интеллектуальная собственность</span>
+        </div>
+        <svg class="section-chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+      </button>
+      <div class="section-body">
+        <p>Все права на название BSMLH, логотип, дизайн, код и концепцию принадлежат BSMLH. Копирование без письменного разрешения влечёт юридическую ответственность. Размещая контент на Платформе, вы предоставляете BSMLH лицензию на его использование в целях работы сервиса.</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <button class="section-toggle" onclick="toggle(this)">
+        <div class="section-toggle-left">
+          <div class="section-num">6</div>
+          <span class="section-title">Ограничение ответственности</span>
+        </div>
+        <svg class="section-chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+      </button>
+      <div class="section-body">
+        <ul>
+          <li>Платформа предоставляется «как есть» — без гарантий бесперебойной работы</li>
+          <li>BSMLH не несёт ответственности за убытки, упущенную выгоду или потерю данных</li>
+          <li>Совокупная ответственность BSMLH не превышает суммы, уплаченной за 30 дней</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section">
+      <button class="section-toggle" onclick="toggle(this)">
+        <div class="section-toggle-left">
+          <div class="section-num">7</div>
+          <span class="section-title">Применимое право</span>
+        </div>
+        <svg class="section-chevron" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+      </button>
+      <div class="section-body">
+        <p>Соглашение регулируется законодательством Республики Казахстан. Споры разрешаются в судах по месту нахождения BSMLH. BSMLH вправе изменять условия Соглашения — продолжение использования Платформы означает принятие изменений.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Фиксированная кнопка согласия -->
+<div class="agree-bar">
+  <div class="agree-links">
+    <a href="privacy.html">Конфиденциальность</a>
+    <a href="token-terms.html">Условия токенов</a>
+    <a href="mailto:bsmlh.org@gmail.com">Связаться</a>
+  </div>
+  <button class="agree-btn" onclick="agreeAndClose()">Соглашаюсь с условиями</button>
+  <p class="agree-note">Нажимая кнопку, вы подтверждаете, что прочитали и принимаете<br>Пользовательское соглашение и Политику конфиденциальности BSMLH.</p>
+</div>
+
+<script>
+function toggle(btn) {
+  var body = btn.nextElementSibling;
+  var chevron = btn.querySelector('.section-chevron');
+  var isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chevron.classList.toggle('open', !isOpen);
+}
+function agreeAndClose() {
+  try { localStorage.setItem('bsmlh_terms_agreed', '1'); } catch(e) {}
+  if (window.history.length > 1) window.history.back();
+  else window.close();
+}
+</script>
+</body>
+</html>

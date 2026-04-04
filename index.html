@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#21A038">
+<link rel="manifest" href="manifest.json">
+<title>BSMLH</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+</head>
+<body>
+
+<!-- ── SPLASH ── -->
+<div id="splash">
+  <div class="sp-logo">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+  </div>
+  <div class="sp-title">BSMLH</div>
+  <div class="sp-sub">Biometric Security Ledger</div>
+  <div class="sp-bar"><div class="sp-fill" id="sp-fill"></div></div>
+</div>
+
+<!-- Inline скрипт — скрыть splash ДО загрузки внешних файлов -->
+<script>
+(function(){
+  var done = false;
+  function hide() {
+    if (done) return; done = true;
+    var s = document.getElementById('splash');
+    if (s) s.style.display = 'none';
+    // Загрузить Firebase после splash
+    if (typeof loadFirebase === 'function') loadFirebase();
+  }
+  setTimeout(hide, 1500);
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(hide, 300); });
+})();
+</script>
+
+<!-- ── ОНБОРДИНГ ── -->
+
+<!-- Шаг 1: Имя -->
+<div id="s1" class="scr on">
+  <div class="steps-row">
+    <div class="step-dot on"></div>
+    <div class="step-dot"></div>
+    <div class="step-dot"></div>
+  </div>
+  <div class="scr-logo">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+  </div>
+  <div class="scr-step">Шаг 1 из 3</div>
+  <div class="scr-h">Добро пожаловать в BSMLH</div>
+  <div class="scr-p">Создайте цифровую личность, защищённую биометрией и NFC-чипом</div>
+  <input class="inp" id="inp-name" maxlength="40" placeholder="Ваше имя" autocomplete="off" autocorrect="off" spellcheck="false">
+  <button class="btn" onclick="step1Next()">Продолжить</button>
+</div>
+
+<!-- Шаг 2: Фото -->
+<div id="s2" class="scr">
+  <div class="steps-row">
+    <div class="step-dot on"></div>
+    <div class="step-dot on"></div>
+    <div class="step-dot"></div>
+  </div>
+  <div class="scr-step">Шаг 2 из 3</div>
+  <div class="scr-h">Фото профиля</div>
+  <div class="scr-p">Загрузите фото или пропустите этот шаг</div>
+  <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:24px;">
+    <div id="photo-prev" style="width:100px;height:100px;border-radius:50%;background:var(--green-light);border:3px solid var(--green);display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:16px;">
+      <svg width="40" height="40" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" fill="#21A038"/></svg>
+    </div>
+    <input type="file" id="photo-inp" accept="image/*" style="display:none" onchange="loadPhoto(this)">
+    <button class="btn-ghost" style="width:auto;padding:10px 24px;" onclick="document.getElementById('photo-inp').click()">📷 Выбрать фото</button>
+  </div>
+  <button class="btn" onclick="showScr('s3')">Продолжить</button>
+  <button class="btn-ghost" onclick="showScr('s3')">Пропустить</button>
+</div>
+
+<!-- Шаг 3: NFC -->
+<div id="s3" class="scr">
+  <div class="steps-row">
+    <div class="step-dot on"></div>
+    <div class="step-dot on"></div>
+    <div class="step-dot on"></div>
+  </div>
+  <div class="scr-step">Шаг 3 из 3 — NFC Чип</div>
+  <div class="scr-h">Активация BSMLH Chip</div>
+  <div class="scr-p">Поднесите NFC-чип к задней части телефона для активации</div>
+  <div class="nfc-card">
+    <div class="nfc-icon">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-5 14H9V8h6v2h-4v1h4v2h-4v1h4v2z"/></svg>
+    </div>
+    <div class="nfc-label">BSMLH CHIP · NTAG213</div>
+    <div class="nfc-status" id="nst1">Готов к сканированию</div>
+    <div id="beam1" style="display:none;width:100%;height:2px;background:var(--green);border-radius:99px;animation:pulse 1s infinite;"></div>
+  </div>
+  <button class="btn" id="nbtn1" onclick="nfcActivate(1)">🛡️ Активировать чип</button>
+  <button class="btn-ghost" onclick="showSMS()">Войти без чипа →</button>
+</div>
+
+<!-- Шаг 4: SMS -->
+<div id="s4" class="scr">
+  <div id="ss1">
+    <div class="scr-step">Верификация</div>
+    <div class="scr-h">Введите номер телефона</div>
+    <div class="scr-p">Мы отправим код подтверждения на ваш номер</div>
+    <div class="phone-prefix">
+      <span class="prefix-flag">🇰🇿</span>
+      <span class="prefix-code">+7</span>
+      <div class="prefix-sep"></div>
+      <input class="prefix-inp" id="sms-phone" placeholder="XXX XXX XX XX" type="tel" inputmode="numeric">
+    </div>
+    <button class="btn" id="nbtn-sms" onclick="sendSMS()">Получить код</button>
+  </div>
+  <div id="ss2" style="display:none;">
+    <div class="scr-step">Верификация</div>
+    <div class="scr-h">Введите код</div>
+    <div class="scr-p" id="sms-hint">Код отправлен на ваш номер</div>
+    <input class="inp" id="sms-code" placeholder="_ _ _ _ _ _" type="tel" inputmode="numeric" maxlength="6" style="font-size:24px;letter-spacing:8px;text-align:center;">
+    <button class="btn" onclick="verifySMS()">Подтвердить</button>
+    <button class="btn-ghost" onclick="el('ss1').style.display='block';el('ss2').style.display='none';">← Изменить номер</button>
+  </div>
+</div>
+<!-- Шаг 5: Согласие с условиями -->
+<div id="s5" class="scr">
+  <div class="scr-logo">
+    <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+  </div>
+  <div class="scr-h" style="margin-bottom:8px;">Почти готово 🎉</div>
+  <div class="scr-p" style="margin-bottom:20px;">Ознакомьтесь с документами BSMLH</div>
+  <div style="background:white;border-radius:16px;border:1px solid #e5e7eb;overflow:hidden;margin-bottom:24px;width:100%;">
+    <a href="terms.html" target="_blank" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #e5e7eb;text-decoration:none;color:#1a1a1a;">
+      <span style="font-size:14px;">📄 Пользовательское соглашение</span><span style="color:#6b7280;">→</span>
+    </a>
+    <a href="privacy.html" target="_blank" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #e5e7eb;text-decoration:none;color:#1a1a1a;">
+      <span style="font-size:14px;">🛡️ Политика конфиденциальности</span><span style="color:#6b7280;">→</span>
+    </a>
+    <a href="token-terms.html" target="_blank" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;text-decoration:none;color:#1a1a1a;">
+      <span style="font-size:14px;">🪙 Условия токенов</span><span style="color:#6b7280;">→</span>
+    </a>
+  </div>
+  <label style="display:flex;align-items:flex-start;gap:12px;margin-bottom:24px;cursor:pointer;width:100%;">
+    <input type="checkbox" id="terms-check" style="width:20px;height:20px;margin-top:2px;accent-color:#21A038;flex-shrink:0;" onchange="toggleAgreeBtn()">
+    <span style="font-size:13px;color:#374151;line-height:1.6;">Я принимаю Пользовательское соглашение, Политику конфиденциальности и Условия токенов</span>
+  </label>
+  <button class="btn" id="agree-btn" style="opacity:0.4;pointer-events:none;" onclick="agreeAndEnter()">
+    Войти в BSMLH →
+  </button>
+</div>
+  
+<!-- ── APP ── -->
+<div id="app">
+
+  <!-- Хедер -->
+  <div class="app-head">
+    <div class="head-logo">
+      <div class="head-logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+      </div>
+      <span class="head-title">BSMLH</span>
+    </div>
+    <div class="head-avatar" onclick="openPg('pg-set')">
+      <img id="dash-av" src="" style="display:none">
+      <span class="head-avatar-ph" id="dash-av-ph">А</span>
+    </div>
+  </div>
+
+  <!-- Контент -->
+  <div class="app-body">
+
+    <!-- Главная -->
+    <div id="tab-home" class="tab-content on">
+      <div class="id-card">
+        <div class="id-card-name" id="id-name">ИМЯ</div>
+        <div class="id-card-huid" id="id-huid">BSMLH-2026-XXXXXXXXXXXXXXXX</div>
+        <div class="id-card-bottom">
+          <div>
+            <div class="id-card-label">Статус</div>
+            <div style="font-size:13px;color:rgba(255,255,255,0.9);font-weight:600;" id="id-chip-status">Без чипа</div>
+          </div>
+          <div class="id-card-chip"></div>
+        </div>
+      </div>
+      <div class="section-title">Сервисы</div>
+      <div class="svc-grid">
+        <div class="svc-item" onclick="openPg('pg-pat')">
+          <div class="svc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg></div>
+          <span class="svc-name">Патент</span>
+        </div>
+        <div class="svc-item" onclick="openPg('pg-jobs')">
+          <div class="svc-icon"><svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.07-.44.18-.88.18-1.36C18 2.98 16.52 2 15 2c-1.3 0-2.4.78-2.97 1.84L12 5h-.03L11 3.84C10.4 2.78 9.3 2 8 2 6.48 2 5 2.98 5 4.64c0 .48.1.92.18 1.36H3c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2z"/></svg></div>
+          <span class="svc-name">Работа</span>
+        </div>
+<div class="svc-item" onclick="openPg('pg-wal');loadWalletBalance()"> <div class="svc-icon"><svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V5c0-1.1.9-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg></div>
+          <span class="svc-name">Кошелёк</span>
+        </div>
+       <div class="svc-item" onclick="openPg('pg-stats');loadStats()">
+  <div class="svc-icon">
+    <svg viewBox="0 0 24 24"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg>
+  </div>
+  <span class="svc-name">Статистика</span>
+</div>
+        <div class="svc-item" onclick="openPg('pg-chip')">
+          <div class="svc-icon"><svg viewBox="0 0 24 24"><path d="M7 2v2H5C3.9 4 3 4.9 3 6v2H1v2h2v4H1v2h2v2c0 1.1.9 2 2 2h2v2h2v-2h4v2h2v-2h2c1.1 0 2-.9 2-2v-2h2v-2h-2v-4h2V8h-2V6c0-1.1-.9-2-2-2h-2V2h-2v2H9V2H7zm2 4h6c.55 0 1 .45 1 1v8c0 .55-.45 1-1 1H9c-.55 0-1-.45-1-1V7c0-.55.45-1 1-1zm1 2v6h4V8h-4z"/></svg></div>
+          <span class="svc-name">NFC Чип</span>
+        </div>
+       <div class="svc-item" onclick="openPg('pg-invest')">
+  <div class="svc-icon"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
+  <span class="svc-name">Партнёры</span>
+</div>
+      </div>
+      <!-- РЕКЛАМНЫЙ СЛАЙДЕР — вставить ПЕРЕД <div class="section-title">Новости</div> -->
+<div style="margin-bottom:20px;">
+  <div id="adSlider" style="display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;">
+
+    <!-- Плитка 1 — Найти работу -->
+    <div style="min-width:88%;scroll-snap-align:start;flex-shrink:0;border-radius:20px;overflow:hidden;position:relative;height:170px;background:linear-gradient(135deg,#21A038,#0a5c1f);">
+      <div class="ad-circle" style="width:200px;height:200px;top:-60px;right:-60px;animation-delay:0s;"></div>
+      <div class="ad-circle" style="width:120px;height:120px;top:20px;right:30px;animation-delay:0.8s;"></div>
+      <div class="ad-circle" style="width:60px;height:60px;bottom:20px;right:80px;animation-delay:1.4s;"></div>
+      <div style="position:absolute;right:12px;bottom:12px;font-size:72px;opacity:0.18;line-height:1;animation:adFloat 4s ease-in-out infinite;">🤝</div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:18px;z-index:2;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">Биржа труда BSMLH</div>
+        <div style="font-size:18px;font-weight:900;color:white;line-height:1.25;margin-bottom:12px;">Найди работу<br>рядом с домом 📍</div>
+        <button onclick="openPg('pg-jobs')" style="width:fit-content;background:white;color:#21A038;border:none;border-radius:10px;padding:8px 18px;font-size:12px;font-weight:800;cursor:pointer;letter-spacing:0.3px;">Смотреть заказы →</button>
+      </div>
+    </div>
+
+    <!-- Плитка 2 — Работодателям -->
+    <div style="min-width:88%;scroll-snap-align:start;flex-shrink:0;border-radius:20px;overflow:hidden;position:relative;height:170px;background:linear-gradient(135deg,#2563EB,#1e3a8a);">
+      <div class="ad-circle" style="width:200px;height:200px;top:-60px;right:-60px;animation-delay:0.3s;"></div>
+      <div class="ad-circle" style="width:100px;height:100px;top:30px;right:40px;animation-delay:1.1s;"></div>
+      <div class="ad-circle" style="width:50px;height:50px;bottom:30px;right:100px;animation-delay:1.8s;"></div>
+      <div style="position:absolute;right:12px;bottom:12px;font-size:72px;opacity:0.18;line-height:1;animation:adFloat 4s ease-in-out infinite 0.5s;">👔</div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:18px;z-index:2;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">Для работодателей</div>
+        <div style="font-size:18px;font-weight:900;color:white;line-height:1.25;margin-bottom:12px;">5 заказов бесплатно<br>для новых 🎁</div>
+        <button onclick="openPg('pg-jobs')" style="width:fit-content;background:white;color:#2563EB;border:none;border-radius:10px;padding:8px 18px;font-size:12px;font-weight:800;cursor:pointer;">Разместить заказ →</button>
+      </div>
+    </div>
+
+    <!-- Плитка 3 — Токены QRT -->
+    <div style="min-width:88%;scroll-snap-align:start;flex-shrink:0;border-radius:20px;overflow:hidden;position:relative;height:170px;background:linear-gradient(135deg,#7C3AED,#4c1d95);">
+      <div class="ad-circle" style="width:200px;height:200px;top:-60px;right:-60px;animation-delay:0.6s;"></div>
+      <div class="ad-circle" style="width:110px;height:110px;top:10px;right:20px;animation-delay:1.3s;"></div>
+      <div class="ad-circle" style="width:55px;height:55px;bottom:25px;right:90px;animation-delay:2s;"></div>
+      <div style="position:absolute;right:12px;bottom:12px;font-size:72px;opacity:0.18;line-height:1;animation:adFloat 4s ease-in-out infinite 1s;">🪙</div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:18px;z-index:2;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">BSMLH Токены</div>
+        <div style="font-size:18px;font-weight:900;color:white;line-height:1.25;margin-bottom:12px;">Зарабатывай QRT<br>и QRNC за работу 🏅</div>
+        <button onclick="openPg('pg-wal');loadWalletBalance()" style="width:fit-content;background:white;color:#7C3AED;border:none;border-radius:10px;padding:8px 18px;font-size:12px;font-weight:800;cursor:pointer;">Мой кошелёк →</button>
+      </div>
+    </div>
+
+    <!-- Плитка 4 — NFC Чип -->
+    <div style="min-width:88%;scroll-snap-align:start;flex-shrink:0;border-radius:20px;overflow:hidden;position:relative;height:170px;background:linear-gradient(135deg,#0891b2,#164e63);">
+      <div class="ad-circle" style="width:200px;height:200px;top:-60px;right:-60px;animation-delay:0.9s;"></div>
+      <div class="ad-circle" style="width:90px;height:90px;top:25px;right:35px;animation-delay:1.6s;"></div>
+      <!-- NFC анимация -->
+      <div style="position:absolute;right:20px;top:50%;transform:translateY(-50%);z-index:1;">
+        <div style="width:60px;height:60px;border-radius:50%;border:3px solid rgba(255,255,255,0.5);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);animation:nfcRing 2s ease-out infinite;"></div>
+        <div style="width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);animation:nfcRing 2s ease-out infinite 0.5s;"></div>
+        <div style="font-size:40px;opacity:0.4;">📡</div>
+      </div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:18px;z-index:2;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">BSMLH Chip</div>
+        <div style="font-size:18px;font-weight:900;color:white;line-height:1.25;margin-bottom:12px;">NFC-чип — твой<br>цифровой паспорт 🛡️</div>
+        <button onclick="openPg('pg-chip')" style="width:fit-content;background:white;color:#0891b2;border:none;border-radius:10px;padding:8px 18px;font-size:12px;font-weight:800;cursor:pointer;">Активировать →</button>
+      </div>
+    </div>
+
+    <!-- Плитка 5 — Карта -->
+    <div style="min-width:88%;scroll-snap-align:start;flex-shrink:0;border-radius:20px;overflow:hidden;position:relative;height:170px;background:linear-gradient(135deg,#D97706,#78350f);">
+      <div class="ad-circle" style="width:200px;height:200px;top:-60px;right:-60px;animation-delay:1.2s;"></div>
+      <div class="ad-circle" style="width:100px;height:100px;top:15px;right:25px;animation-delay:2s;"></div>
+      <!-- Пульс геолокации -->
+      <div style="position:absolute;right:30px;top:50%;transform:translateY(-60%);z-index:1;">
+        <div style="width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,0.1);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);animation:locPulse 2s ease-out infinite;"></div>
+        <div style="width:45px;height:45px;border-radius:50%;background:rgba(255,255,255,0.15);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);animation:locPulse 2s ease-out infinite 0.4s;"></div>
+        <div style="font-size:40px;opacity:0.5;position:relative;">📍</div>
+      </div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:18px;z-index:2;">
+        <div style="font-size:10px;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;">Карта работников</div>
+        <div style="font-size:18px;font-weight:900;color:white;line-height:1.25;margin-bottom:12px;">Покажись на карте —<br>найдут работодатели 🗺️</div>
+        <button onclick="switchTab('map')" style="width:fit-content;background:white;color:#D97706;border:none;border-radius:10px;padding:8px 18px;font-size:12px;font-weight:800;cursor:pointer;">Открыть карту →</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Точки-индикаторы -->
+  <div style="display:flex;justify-content:center;gap:6px;margin-top:10px;">
+    <div id="dot-0" style="height:4px;border-radius:2px;background:#21A038;width:20px;transition:all 0.3s;"></div>
+    <div id="dot-1" style="height:4px;border-radius:2px;background:#ddd;width:6px;transition:all 0.3s;"></div>
+    <div id="dot-2" style="height:4px;border-radius:2px;background:#ddd;width:6px;transition:all 0.3s;"></div>
+    <div id="dot-3" style="height:4px;border-radius:2px;background:#ddd;width:6px;transition:all 0.3s;"></div>
+    <div id="dot-4" style="height:4px;border-radius:2px;background:#ddd;width:6px;transition:all 0.3s;"></div>
+  </div>
+</div>
+
+<style>
+#adSlider::-webkit-scrollbar { display:none; }
+.ad-circle {
+  position:absolute;
+  border-radius:50%;
+  background:rgba(255,255,255,0.07);
+  animation:adPulse 4s ease-in-out infinite;
+}
+@keyframes adPulse {
+  0%,100% { transform:scale(1); opacity:0.07; }
+  50% { transform:scale(1.2); opacity:0.14; }
+}
+@keyframes adFloat {
+  0%,100% { transform:translateY(0px) rotate(0deg); }
+  50% { transform:translateY(-8px) rotate(5deg); }
+}
+@keyframes nfcRing {
+  0% { transform:translate(-50%,-50%) scale(0.8); opacity:0.8; }
+  100% { transform:translate(-50%,-50%) scale(1.8); opacity:0; }
+}
+@keyframes locPulse {
+  0% { transform:translate(-50%,-50%) scale(0.8); opacity:0.6; }
+  100% { transform:translate(-50%,-50%) scale(1.6); opacity:0; }
+}
+</style>
+
+<script>
+(function(){
+  var slider = document.getElementById('adSlider');
+  if (!slider) return;
+  var current = 0, total = 5;
+  function updateDots(n) {
+    for (var i = 0; i < total; i++) {
+      var d = document.getElementById('dot-' + i);
+      if (d) { d.style.width = i===n ? '20px':'6px'; d.style.background = i===n ? '#21A038':'#ddd'; }
+    }
+  }
+  function goTo(n) {
+    current = ((n % total) + total) % total;
+    var itemW = slider.scrollWidth / total;
+    slider.scrollTo({ left: current * itemW, behavior:'smooth' });
+    updateDots(current);
+  }
+  // Автопрокрутка каждые 3.5 сек
+  var timer = setInterval(function(){ goTo(current + 1); }, 3500);
+  // Пауза при касании
+  slider.addEventListener('touchstart', function(){ clearInterval(timer); });
+  slider.addEventListener('touchend', function(){
+    timer = setInterval(function(){ goTo(current + 1); }, 3500);
+  });
+  // Обновление точек при ручном скролле
+  slider.addEventListener('scroll', function() {
+    var itemW = slider.scrollWidth / total;
+    var n = Math.round(slider.scrollLeft / itemW);
+    if (n !== current && n >= 0 && n < total) { current = n; updateDots(current); }
+  });
+})();
+</script>
+      <div class="section-title">Новости</div>
+      <div id="feed-home"></div>
+    </div>
+
+    <!-- Карта -->
+    <div id="tab-map" class="tab-content">
+      <!-- Фильтры категорий -->
+      <div id="map-filters" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;"></div>
+      <!-- Карта -->
+<iframe id="map-container" src="https://maps.google.com/maps?q=Almaty&output=embed&z=12" style="width:100%;height:50vh;min-height:300px;border-radius:16px;border:none;margin-bottom:12px;"></iframe>      <!-- Кнопки -->
+      <div style="display:flex;gap:8px;">
+        <button class="btn" style="flex:1;padding:12px;" onclick="shareMyLocation()">📍 Я ищу работу</button>
+        <button class="btn-ghost" style="flex:1;padding:12px;" onclick="showCategorySelect()">🎯 Моя специальность</button>
+      </div>
+      <!-- Выбор специальности -->
+      <div id="my-cat-panel" style="display:none;margin-top:12px;" class="card">
+        <div class="section-title">Выберите специальность</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;" id="my-cat-list"></div>
+      </div>
+      <!-- Карточка работника -->
+      <div id="worker-card" style="display:none;position:fixed;bottom:80px;left:16px;right:16px;background:white;border-radius:20px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:1500;"></div>
+    </div>
+
+    <!-- Чат -->
+    <div id="tab-chat" class="tab-content">
+      <div class="chat-msgs" id="chat-msgs"></div>
+      <div class="chat-input-row">
+        <input class="chat-inp" id="chat-inp" placeholder="Спросите ALAI..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="chat-send" onclick="sendChat()">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Профиль -->
+    <div id="tab-prof" class="tab-content">
+      <div class="prof-hero">
+        <div class="prof-av"><img id="p-av" src="" style="display:none"><span class="prof-av-ph" id="p-av-ph">А</span></div>
+        <div class="prof-name" id="p-name">ИМЯ</div>
+        <div class="prof-huid" id="p-huid">BSMLH-2026-...</div>
+      </div>
+      <div class="card">
+        <div class="set-row" onclick="openPg('pg-set')">
+          <div class="set-row-left"><div class="set-row-icon"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></div><span class="set-row-text">Настройки</span></div>
+          <div class="set-row-arr"><svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></div>
+        </div>
+        <div class="set-row" onclick="openPg('pg-chip')">
+          <div class="set-row-left"><div class="set-row-icon"><svg viewBox="0 0 24 24"><path d="M7 2v2H5C3.9 4 3 4.9 3 6v2H1v2h2v4H1v2h2v2c0 1.1.9 2 2 2h2v2h2v-2h4v2h2v-2h2c1.1 0 2-.9 2-2v-2h2v-2h-2v-4h2V8h-2V6c0-1.1-.9-2-2-2h-2V2h-2v2H9V2H7z"/></svg></div><span class="set-row-text">NFC Чип</span></div>
+          <div class="set-row-arr"><svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></div>
+        </div>
+        <div class="set-row" onclick="el('app').style.display='none';showScr('s1');T('Выход выполнен')">
+          <div class="set-row-left"><div class="set-row-icon"><svg viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg></div><span class="set-row-text">Выйти</span></div>
+          <div class="set-row-arr"><svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Навбар -->
+  <nav class="navbar">
+    <button class="nav-btn on" id="nav-home" onclick="switchTab('home')">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Главная</span>
+    </button>
+    <button class="nav-btn" id="nav-map" onclick="switchTab('map')">
+      <svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+      <span>Карта</span>
+    </button>
+    <button class="nav-btn" id="nav-chat" onclick="switchTab('chat')">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+      <span>ALAI</span>
+    </button>
+    <button class="nav-btn" id="nav-prof" onclick="switchTab('prof')">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      <span>Профиль</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ── СТРАНИЦЫ ── -->
+
+<!-- Патент -->
+<div id="pg-pat" class="pg">
+  <div class="pg-head">
+    <button class="pg-back" onclick="closePg('pg-pat')"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+    <span class="pg-head-title">🛠️ Патентная мастерская</span>
+  </div>
+  <div class="pg-body">
+    <div id="pat-view" style="display:none;margin-bottom:16px;"></div>
+    <div id="pat-empty" style="text-align:center;padding:16px 0 20px;">
+      <svg width="56" height="56" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z" fill="#21A038" opacity="0.3"/></svg>
+      <div style="font-size:14px;color:var(--text2);margin-top:8px;">Нет зарегистрированных изобретений</div>
+    </div>
+    <div class="card">
+      <div class="section-title">+ Новое изобретение</div>
+      <select class="inp" id="inv-niche" style="-webkit-appearance:none;">
+        <option value="">Выберите нишу...</option>
+        <option value="IT">💻 Информационные технологии</option>
+        <option value="MED">🏥 Медицина и здоровье</option>
+        <option value="AGR">🌾 Сельское хозяйство</option>
+        <option value="ENE">⚡ Энергетика</option>
+        <option value="TRN">🚗 Транспорт</option>
+        <option value="ECO">🌍 Экология</option>
+        <option value="EDU">📚 Образование</option>
+        <option value="FIN">💰 Финансы и блокчейн</option>
+        <option value="SEC">🛡️ Безопасность</option>
+        <option value="OTH">🔧 Другое</option>
+      </select>
+      <input class="inp" id="inv-t" placeholder="Название изобретения">
+      <textarea class="inp" id="inv-d" placeholder="Описание — что делает, как работает, в чём уникальность..." rows="4" style="resize:none;"></textarea>
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px;">Уровень защиты</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <div id="lv1" class="lv-btn on" onclick="slv(1)"><div class="lv-num">L1</div><div class="lv-name">Timestamp</div><div class="lv-price">$0.99</div></div>
+        <div id="lv2" class="lv-btn" onclick="slv(2)"><div class="lv-num">L2</div><div class="lv-name">Prior Art</div><div class="lv-price">$9.99</div></div>
+        <div id="lv3" class="lv-btn" onclick="slv(3)"><div class="lv-num">L3</div><div class="lv-name">Certificate</div><div class="lv-price">$49.99</div></div>
+      </div>
+      <button class="btn" onclick="tryFixInv()">🛡️ Приложить чип и зафиксировать</button>
+    </div>
+  </div>
+</div>
+
+<!-- Работа -->
+<div id="pg-jobs" class="pg">
+  <div class="pg-head">
+    <button class="pg-back" onclick="closePg('pg-jobs')"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+    <span class="pg-head-title">🤝 Биржа труда</span>
+  </div>
+  <div class="pg-body">
+
+    <!-- Выбор роли -->
+    <div id="jobs-role">
+      <div style="text-align:center;padding:16px 0 24px;">
+        <div style="font-size:22px;font-weight:900;color:var(--text);margin-bottom:8px;">Кто вы?</div>
+        <div style="font-size:14px;color:var(--text2);">Выберите роль для продолжения</div>
+      </div>
+      <div onclick="selectRole('employer')" style="background:var(--green);border-radius:20px;padding:24px;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;gap:16px;">
+        <div style="font-size:40px;">👔</div>
+        <div><div style="font-size:18px;font-weight:900;color:white;">Работодатель</div><div style="font-size:13px;color:rgba(255,255,255,0.8);">Разместить заказ, выбрать исполнителя</div></div>
+      </div>
+      <div onclick="selectRole('worker')" style="background:white;border-radius:20px;padding:24px;cursor:pointer;display:flex;align-items:center;gap:16px;border:2px solid var(--border);">
+        <div style="font-size:40px;">🧑‍💼</div>
+        <div><div style="font-size:18px;font-weight:900;color:var(--text);">Работник</div><div style="font-size:13px;color:var(--text2);">Найти заказ и откликнуться</div></div>
+      </div>
+    </div>
+
+    <!-- Работодатель -->
+    <div id="jobs-employer" style="display:none;">
+<div id="jobs-employer-home">
+  <button class="btn-ghost" style="margin-bottom:12px;" onclick="el('jobs-employer').style.display='none';el('jobs-role').style.display='block';">← Сменить роль</button>
+  <button class="btn" onclick="showPostJob()">+ Разместить заказ</button>
+        <div class="section-title">Мои заказы</div>
+        <div id="my-jobs-list"><div style="text-align:center;padding:20px;color:var(--text2);font-size:13px;">Нет активных заказов</div></div>
+      </div>
+      <!-- Выбор категории -->
+      <div id="jobs-cat-select" style="display:none;">
+        <div style="font-size:17px;font-weight:700;margin-bottom:16px;">Выберите категорию</div>
+        <div id="jobs-cat-list"></div>
+        <button class="btn-ghost" onclick="el('jobs-cat-select').style.display='none';el('jobs-employer-home').style.display='block';">← Назад</button>
+      </div>
+      <!-- Форма заказа -->
+      <div id="jobs-post-form" style="display:none;">
+        <div 
+          style="font-size:17px;font-weight:700;margin-bottom:4px;">Новый заказ</div>
+        <div id="jobs-post-cat-label" style="font-size:13px;color:var(--green);font-weight:600;margin-bottom:16px;"></div>
+        <input class="inp" id="jp-title" maxlength="60" placeholder="Название заказа">
+        <textarea class="inp" id="jp-desc" maxlength="500" placeholder="Подробное описание задания..." rows="4" style="resize:none;"></textarea>
+        <input class="inp" id="jp-price" maxlength="20" placeholder="Оплата (напр. 15 000₸)">
+        <input class="inp" id="jp-location" maxlength="50" placeholder="Местоположение (или Удалённо)">
+        <button class="btn" onclick="postNewJob()">📢 Опубликовать заказ</button>
+        <button class="btn-ghost" onclick="el('jobs-post-form').style.display='none';el('jobs-employer-home').style.display='block';">← Назад</button>
+      </div>
+    </div>
+
+    <!-- Работник -->
+   <div id="jobs-worker" style="display:none;">
+  <button class="btn-ghost" style="margin-bottom:12px;" onclick="el('jobs-worker').style.display='none';el('jobs-role').style.display='block';">← Сменить роль</button>
+  <div style="overflow-x:auto;white-space:nowrap;margin-bottom:16px;padding-bottom:4px;">
+        <button class="job-tag" style="padding:8px 14px;cursor:pointer;margin-right:6px;font-size:13px;" onclick="loadJobs()">Все</button>
+        <button class="job-tag" style="padding:8px 14px;cursor:pointer;margin-right:6px;font-size:13px;" onclick="filterJobs('it')">💻 IT</button>
+        <button class="job-tag" style="padding:8px 14px;cursor:pointer;margin-right:6px;font-size:13px;" onclick="filterJobs('transport')">🚗 Транспорт</button>
+        <button class="job-tag" style="padding:8px 14px;cursor:pointer;margin-right:6px;font-size:13px;" onclick="filterJobs('build')">🏗️ Стройка</button>
+        <button class="job-tag" style="padding:8px 14px;cursor:pointer;margin-right:6px;font-size:13px;" onclick="filterJobs('clean')">🧹 Уборка</button>
+        <button class="job-tag" style="padding:8px 14px;cursor:pointer;margin-right:6px;font-size:13px;" onclick="filterJobs('other')">🔧 Другое</button>
+      </div>
+      <div id="worker-jobs-list"><div style="text-align:center;padding:20px;color:var(--text2);">Загрузка...</div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Детали заказа -->
+<div id="job-detail" style="display:none;position:fixed;inset:0;z-index:3000;background:var(--bg);flex-direction:column;overflow-y:auto;"></div>
+
+<!-- Чат по заказу -->
+<div id="job-chat" style="display:none;position:fixed;inset:0;z-index:4000;background:var(--bg);flex-direction:column;">
+  <div class="pg-head">
+    <button class="pg-back" onclick="closeJobChat()"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+    <span class="pg-head-title" id="job-chat-title">Чат</span>
+  </div>
+  <div id="job-chat-msgs" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;"></div>
+  <div class="chat-input-row">
+    <input class="chat-inp" id="job-chat-inp" maxlength="500" placeholder="Сообщение..." onkeydown="if(event.key==='Enter')sendJobChatMsg()">
+    <button class="chat-send" onclick="sendJobChatMsg()"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+  </div>
+</div>
+
+<!-- Рейтинг -->
+<div id="rating-panel" style="display:none;position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,0.7);align-items:flex-end;">
+  <div style="background:white;border-radius:24px 24px 0 0;padding:24px;width:100%;">
+    <div style="font-size:18px;font-weight:700;margin-bottom:16px;" id="rating-title">Оценить</div>
+    <input type="hidden" id="rating-job-id">
+    <input type="hidden" id="rating-target">
+    <input type="hidden" id="rating-target-role">
+<input type="hidden" id="rating-target-role">    <div id="rating-stars" style="display:flex;gap:8px;justify-content:center;margin-bottom:16px;"></div>
+    <textarea class="inp" id="rating-review" maxlength="300" placeholder="Отзыв (необязательно)" rows="3" style="resize:none;"></textarea>
+    <button class="btn" onclick="submitRating()">⭐ Отправить оценку</button>
+    <button class="btn-ghost" onclick="closeRating()">Отмена</button>
+  </div>
+</div>
+
+<!-- Кошелёк -->
+<div id="pg-wal" class="pg">
+  <div class="pg-head">
+    <button class="pg-back" onclick="closePg('pg-wal')"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+    <span class="pg-head-title">Кошелёк</span>
+  </div>
+  <div class="pg-body">
+    <div class="wallet-card">
+     <div class="wallet-balance-label">Баланс BSMLH Token</div>
+<div style="display:flex;align-items:baseline;gap:8px;">
+  <span class="wallet-balance" id="wal-bsmlh">1</span>
+  <span class="wallet-currency">BSMLH</span>
+</div>
+      <div style="display:flex;gap:12px;margin-top:16px;">
+  <div style="flex:1;background:rgba(255,255,255,0.15);border-radius:12px;padding:12px;text-align:center;">
+    <div style="font-size:11px;opacity:0.7;margin-bottom:4px;">QRT</div>
+    <div style="font-size:20px;font-weight:900;" id="wal-qrt">0.000</div>
+  </div>
+  <div style="flex:1;background:rgba(255,255,255,0.15);border-radius:12px;padding:12px;text-align:center;">
+    <div style="font-size:11px;opacity:0.7;margin-bottom:4px;">QRNC</div>
+    <div style="font-size:20px;font-weight:900;" id="wal-qrnc">0.000</div>
+  </div>
+
+</div>
+      <div class="wallet-actions">
+        <button class="wallet-btn" onclick="T('Скоро будет доступно')">↑ Пополнить</button>
+        <button class="wallet-btn" onclick="T('Скоро будет доступно')">↓ Вывести</button>
+        <button class="wallet-btn" onclick="T('Скоро будет доступно')">⇄ Обмен</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title">Мой адрес</div>
+      <div id="wal-addr" style="font-size:12px;color:var(--text2);word-break:break-all;padding:8px 0;">Генерируется после входа...</div>
+      <button class="btn-ghost" style="margin-top:8px;" onclick="copyAddr()">📋 Скопировать адрес</button>
+    </div>
+    <div class="card" style="background:var(--green-light);border:1.5px solid var(--green);">
+<div class="card" style="background:var(--green-light);border:1.5px solid var(--green);">
+  <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px;">🎁 Добро пожаловать в BSMLH</div>
+  <div style="font-size:12px;color:var(--text2);line-height:1.6;">
+    Все зарегистрированные пользователи получают возможность разместить первые <b>5 заказов бесплатно</b>.
+  </div>
+</div>    </div>
+  </div>
+</div>
+
+<!-- Статистика -->
+<div class="svc-item" onclick="openPg('pg-stats');loadStats()">
+  <div class="svc-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></div>
+  <span class="svc-name">Статистика</span>
+</div>
+
+  <!-- NFC Чип -->
+<div id="pg-chip" class="pg">
+  <div class="pg-head">
+    <button class="pg-back" onclick="closePg('pg-chip')"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+    <span class="pg-head-title">NFC Чип</span>
+  </div>
+  <div class="pg-body">
+    <div class="nfc-card">
+      <div class="nfc-icon"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-5 14H9V8h6v2h-4v1h4v2h-4v1h4v2z"/></svg></div>
+      <div class="nfc-label" id="chip-status-label">ЧИП НЕ АКТИВИРОВАН</div>
+      <div class="nfc-status" id="nst2">Поднесите чип к задней части телефона</div>
+      <div id="beam2" style="display:none;width:100%;height:3px;background:var(--green);border-radius:99px;animation:pulse 1s infinite;margin-top:8px;"></div>
+    </div>
+    <div id="chip-uid-block" style="display:none;" class="card">
+      <div class="card-title">UID Чипа</div>
+      <div id="chip-uid-val" style="font-size:15px;word-break:break-all;font-family:monospace;font-weight:600;color:var(--green);margin-top:4px;"></div>
+      <button class="btn-ghost" style="margin-top:10px;" onclick="copyUID()">📋 Скопировать UID</button>
+    </div>
+    <div class="card">
+      <div class="section-title">О чипе BSMLH</div>
+      <div style="font-size:14px;color:var(--text2);line-height:1.7;">BSMLH Chip — физический NFC-чип стандарта <b>NTAG213</b>. После активации привязывается к вашему HUID и используется как физический ключ для входа и подписания документов.</div>
+    </div>
+    <button class="btn" id="nbtn2" onclick="nfcActivate(2)">🛡️ Сканировать чип</button>
+  </div>
+</div>
+
+<!-- Настройки -->
+<div id="pg-set" class="pg">
+  <div class="pg-head">
+    <button class="pg-back" onclick="closePg('pg-set')"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+    <span class="pg-head-title">Настройки</span>
+  </div>
+  <div class="pg-body">
+    <div class="prof-hero">
+      <div class="prof-av"><img id="set-av" src="" style="display:none"><span id="set-av-ph" class="prof-av-ph">А</span></div>
+      <div class="prof-name" id="set-name">ИМЯ</div>
+      <div class="prof-huid" id="set-huid">BSMLH-2026-...</div>
+    </div>
+    <div class="card">
+      <div class="set-row">
+        <div class="set-row-left"><div class="set-row-icon"><svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></div><span class="set-row-text" id="set-phone">Телефон не указан</span></div>
+        <div class="set-row-arr"><svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></div>
+      </div>
+      <div class="set-row">
+        <div class="set-row-left"><div class="set-row-icon"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg></div><span class="set-row-text" id="set-chip-txt">Чип не активирован</span></div>
+        <div class="set-row-arr"><svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></div>
+      </div>
+    </div>
+    <button class="btn" style="background:#EF4444;margin-top:16px;" onclick="el('app').style.display='none';showScr('s1');T('Выход выполнен')">Выйти из аккаунта</button>
+  </div>
+</div>
+
+    <!-- СТАТИСТИКА -->
+<div id="pg-stats" class="pg">
+  <div class="pg-head">
+    <button class="pg-back" onclick="closePg('pg-stats')">
+      <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    </button>
+    <span class="pg-head-title">📊 Моя статистика</span>
+  </div>
+  <div class="pg-body">
+
+    <!-- Карточка заработка -->
+    <div style="background:linear-gradient(135deg,#21A038,#0a5c1f);border-radius:20px;padding:24px;margin-bottom:16px;color:white;">
+      <div style="font-size:12px;opacity:0.75;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px;">Общий заработок</div>
+      <div style="font-size:36px;font-weight:900;" id="stat-earned">0 ₸</div>
+      <div style="font-size:12px;opacity:0.7;margin-top:4px;">За всё время на платформе</div>
+      <div style="display:flex;gap:16px;margin-top:20px;">
+        <div style="flex:1;background:rgba(255,255,255,0.15);border-radius:12px;padding:12px;text-align:center;">
+          <div style="font-size:11px;opacity:0.7;margin-bottom:4px;">QRT заработано</div>
+          <div style="font-size:22px;font-weight:900;" id="stat-qrt">0</div>
+        </div>
+        <div style="flex:1;background:rgba(255,255,255,0.15);border-radius:12px;padding:12px;text-align:center;">
+          <div style="font-size:11px;opacity:0.7;margin-bottom:4px;">QRNC заработано</div>
+          <div style="font-size:22px;font-weight:900;" id="stat-qrnc">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Счётчики -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div style="background:white;border-radius:16px;border:1px solid #e5e7eb;padding:18px;text-align:center;">
+        <div style="font-size:32px;font-weight:900;color:#21A038;" id="stat-done">0</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;">Выполнено заказов</div>
+      </div>
+      <div style="background:white;border-radius:16px;border:1px solid #e5e7eb;padding:18px;text-align:center;">
+        <div style="font-size:32px;font-weight:900;color:#2563EB;" id="stat-posted">0</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;">Размещено заказов</div>
+      </div>
+      <div style="background:white;border-radius:16px;border:1px solid #e5e7eb;padding:18px;text-align:center;">
+        <div style="font-size:32px;font-weight:900;color:#7C3AED;" id="stat-rating">—</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;">Средний рейтинг</div>
+      </div>
+      <div style="background:white;border-radius:16px;border:1px solid #e5e7eb;padding:18px;text-align:center;">
+        <div style="font-size:32px;font-weight:900;color:#D97706;" id="stat-days">0</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;">Дней на платформе</div>
+      </div>
+    </div>
+
+    <!-- Уровень -->
+    <div style="background:white;border-radius:16px;border:1px solid #e5e7eb;padding:18px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-size:14px;font-weight:700;">Уровень профиля</div>
+        <div id="stat-level-badge" style="background:#E8F5E9;color:#21A038;font-size:12px;font-weight:700;padding:4px 10px;border-radius:8px;">Новичок</div>
+      </div>
+      <div style="background:#f3f4f6;border-radius:99px;height:8px;overflow:hidden;">
+        <div id="stat-progress" style="height:100%;background:linear-gradient(90deg,#21A038,#4ade80);border-radius:99px;width:0%;transition:width 1s ease;"></div>
+      </div>
+      <div style="font-size:12px;color:#6b7280;margin-top:8px;" id="stat-level-hint">Выполните первый заказ для повышения уровня</div>
+    </div>
+
+  </div>
+</div>
+
+    <!-- ПАРТНЁРЫ И ИНВЕСТОРЫ -->
+<div id="pg-invest" class="pg">
+  <div class="pg-head">
+    <button class="pg-back" onclick="closePg('pg-invest')">
+      <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    </button>
+    <span class="pg-head-title">🤝 Партнёры и инвесторы</span>
+  </div>
+  <div class="pg-body">
+
+    <!-- HERO -->
+    <div style="background:linear-gradient(135deg,#0f172a,#1e3a5f);border-radius:20px;padding:28px 24px;margin-bottom:16px;text-align:center;position:relative;overflow:hidden;">
+      <div style="position:absolute;width:200px;height:200px;border-radius:50%;background:rgba(33,160,56,0.15);top:-60px;right:-40px;"></div>
+      <div style="position:absolute;width:120px;height:120px;border-radius:50%;background:rgba(37,99,235,0.15);bottom:-30px;left:-20px;"></div>
+      <div style="font-size:40px;margin-bottom:12px;">🌍</div>
+      <div style="font-size:22px;font-weight:900;color:white;line-height:1.3;margin-bottom:10px;">BSMLH — глобальная<br>платформа будущего</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.7);line-height:1.7;">Biometric Security Multi-Function<br>Ledger For Humanity</div>
+    </div>
+
+    <!-- МИССИЯ -->
+    <div style="background:white;border-radius:16px;border:1px solid #e5e7eb;padding:20px;margin-bottom:12px;">
+      <div style="font-size:13px;font-weight:700;color:#21A038;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">🎯 Миссия</div>
+      <div style="font-size:14px;color:#1a1a1a;font-weight:700;line-height:1.5;margin-bottom:8px;">Создать первую в мире децентрализованную экосистему биометрической идентификации для рынка труда</div>
+      <div style="font-size:13px;color:#6b7280;line-height:1.7;">Мы объединяем NFC-технологии, блокчейн и ИИ в одной платформе — делая каждого работника верифицированным, защищённым и монетизированным.</div>
+    </div>
+
+    <!-- ЦИФРЫ РЫНКА -->
+    <div style="background:white;border-radius:16px;border:1px solid #e5e7eb;padding:20px;margin-bottom:12px;">
+      <div style="font-size:13px;font-weight:700;color:#2563EB;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;">📈 Рынок и потенциал</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:#EFF6FF;border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:22px;font-weight:900;color:#2563EB;">$500B+</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px;">Рынок труда СНГ</div>
+        </div>
+        <div style="background:#E8F5E9;border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:22px;font-weight:900;color:#21A038;">50M+</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px;">Целевая аудитория</div>
+        </div>
+        <div style="background:#EDE9FE;border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:22px;font-weight:900;color:#7C3AED;">3-в-1</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px;">NFC + Блокчейн + ИИ</div>
+        </div>
+        <div style="background:#FEF3C7;border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:22px;font-weight:900;color:#D97706;">2026</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px;">Запуск Token</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ПОЧЕМУ МЫ ВЫИГРАЕМ -->
+    <div style="background:white;border-radius:16px;border:1px solid #e5e7eb;padding:20px;margin-bottom:12px;">
+      <div style="font-size:13px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;">⚡ Конкурентные преимущества</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <div style="width:32px;height:32px;background:#E8F5E9;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;">🔒</div>
+          <div><div style="font-size:13px;font-weight:700;">NFC-идентификация</div><div style="font-size:12px;color:#6b7280;margin-top:2px;">Физический чип NTAG213 — невозможно подделать личность</div></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <div style="width:32px;height:32px;background:#EFF6FF;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;">⛓️</div>
+          <div><div style="font-size:13px;font-weight:700;">Блокчейн-репутация</div><div style="font-size:12px;color:#6b7280;margin-top:2px;">Неизменяемая история заказов и рейтингов на блокчейне</div></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <div style="width:32px;height:32px;background:#EDE9FE;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;">🪙</div>
+          <div><div style="font-size:13px;font-weight:700;">Токен-экономика</div><div style="font-size:12px;color:#6b7280;margin-top:2px;">QRT, QRNC, BSMLH — работники зарабатывают реальные активы</div></div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <div style="width:32px;height:32px;background:#FEF3C7;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;">🤖</div>
+          <div><div style="font-size:13px;font-weight:700;">ИИ-ассистент ALAI</div><div style="font-size:12px;color:#6b7280;margin-top:2px;">Персональный ИИ для каждого пользователя платформы</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROADMAP -->
+    <div style="background:white;border-radius:16px;border:1px solid #e5e7eb;padding:20px;margin-bottom:12px;">
+      <div style="font-size:13px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;">🗺️ Roadmap</div>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        <div style="display:flex;gap:14px;padding-bottom:16px;position:relative;">
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <div style="width:28px;height:28px;background:#21A038;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="14" height="14" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="white"/></svg>
+            </div>
+            <div style="width:2px;flex:1;background:#e5e7eb;margin-top:4px;min-height:20px;"></div>
+          </div>
+          <div style="padding-top:4px;"><div style="font-size:13px;font-weight:700;">Q1 2026 — MVP запущен ✅</div><div style="font-size:12px;color:#6b7280;margin-top:2px;">NFC-чип, биржа труда, кошелёк, QRT/QRNC токены</div></div>
+        </div>
+        <div style="display:flex;gap:14px;padding-bottom:16px;position:relative;">
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <div style="width:28px;height:28px;background:#2563EB;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:white;font-weight:700;">2</div>
+            <div style="width:2px;flex:1;background:#e5e7eb;margin-top:4px;min-height:20px;"></div>
+          </div>
+          <div style="padding-top:4px;"><div style="font-size:13px;font-weight:700;">Q2–Q3 2026 — Масштабирование</div><div style="font-size:12px;color:#6b7280;margin-top:2px;">10 000+ пользователей, партнёрства с работодателями </div></div>
+        </div>
+        <div style="display:flex;gap:14px;padding-bottom:16px;">
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <div style="width:28px;height:28px;background:#7C3AED;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:white;font-weight:700;">3</div>
+            <div style="width:2px;flex:1;background:#e5e7eb;margin-top:4px;min-height:20px;"></div>
+          </div>
+          <div style="padding-top:4px;"><div style="font-size:13px;font-weight:700;">Q4 2026 — BST Token IEO</div><div style="font-size:12px;color:#6b7280;margin-top:2px;">Листинг BST Token на биржах, выход на рынки СНГ</div></div>
+        </div>
+        <div style="display:flex;gap:14px;">
+          <div style="width:28px;height:28px;background:#D97706;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;color:white;font-weight:700;">4</div>
+          <div style="padding-top:4px;"><div style="font-size:13px;font-weight:700;">2027 — Глобальная экспансия</div><div style="font-size:12px;color:#6b7280;margin-top:2px;">Выход по всему Миру 10M+ пользователей</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div style="background:linear-gradient(135deg,#21A038,#1d4ed8);border-radius:20px;padding:24px;text-align:center;margin-bottom:12px;">
+      <div style="font-size:18px;font-weight:900;color:white;margin-bottom:8px;">Станьте частью революции 🚀</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-bottom:20px;line-height:1.6;">Мы ищем стратегических партнёров и инвесторов для масштабирования платформы по всему МИРУ </div>
+      <a href="mailto:bsmlh.org@gmail.com" style="display:inline-block;background:white;color:#21A038;text-decoration:none;padding:14px 28px;border-radius:12px;font-size:14px;font-weight:800;">📧 Написать нам</a>
+    </div>
+
+    <!-- Форма интереса -->
+    <div style="background:white;border-radius:16px;border:1px solid #e5e7eb;padding:20px;margin-bottom:16px;">
+      <div style="font-size:14px;font-weight:700;margin-bottom:14px;">💼 Оставить заявку</div>
+      <select id="invest-type" style="width:100%;padding:12px;border-radius:10px;border:1.5px solid #e5e7eb;font-size:14px;margin-bottom:10px;background:white;">
+        <option value="">Кто вы?</option>
+        <option value="investor">💰 Инвестор</option>
+        <option value="partner">🤝 Стратегический партнёр</option>
+        <option value="corp">🏢 Корпоративный клиент</option>
+        <option value="media">📱 Медиа / PR</option>
+      </select>
+      <input id="invest-name" class="inp" placeholder="Ваше имя и компания" style="margin-bottom:10px;">
+      <input id="invest-contact" class="inp" placeholder="Email или Telegram" style="margin-bottom:16px;">
+      <button class="btn" onclick="sendInvestRequest()">Отправить заявку →</button>
+    </div>
+
+  </div>
+</div>
+    
+<!-- ── OVERLAY ЧИПА ── -->
+<div id="chip-overlay">
+  <div class="chip-overlay-icon">
+    <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-5 14H9V8h6v2h-4v1h4v2h-4v1h4v2z"/></svg>
+  </div>
+  <div class="chip-overlay-title" id="chip-overlay-title">Поднесите чип к телефону...</div>
+  <div class="chip-overlay-sub" id="chip-overlay-sub">Задняя часть телефона · NTAG213</div>
+  <div class="chip-overlay-bar"></div>
+</div>
+
+<!-- ── СЕРТИФИКАТ ── -->
+<div id="cert-page">
+  <div class="cert-wrap">
+    <div class="cert-header">
+      <div class="cert-logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+      </div>
+      <div class="cert-title">BSMLH</div>
+      <div class="cert-subtitle">Сертификат авторского приоритета</div>
+    </div>
+    <div class="cert-field"><label>Автор</label><p id="cert-author">—</p></div>
+    <div class="cert-field"><label>HUID</label><p class="mono" id="cert-huid">—</p></div>
+    <div class="cert-field"><label>Изобретение</label><p id="cert-title-txt">—</p></div>
+    <div class="cert-field"><label>Описание</label><p id="cert-desc">—</p></div>
+    <div style="display:flex;gap:12px;">
+      <div class="cert-field" style="flex:1;"><label>Ниша</label><p id="cert-niche">—</p></div>
+      <div class="cert-field" style="flex:1;"><label>Уровень</label><p id="cert-level" style="color:var(--green);font-weight:700;">—</p></div>
+    </div>
+    <div class="cert-field"><label>ID документа</label><p class="mono" id="cert-inv-id">—</p></div>
+    <div class="cert-field"><label>Дата фиксации</label><p id="cert-time">—</p></div>
+    <div class="cert-field"><label>SHA хэш</label><p class="mono" id="cert-hash">—</p></div>
+    <div class="cert-qr">
+      <img id="cert-qr-img" src="" alt="QR">
+      <div class="cert-qr-label">Скан для верификации</div>
+    </div>
+    <div class="cert-footer">
+      Настоящий сертификат подтверждает факт фиксации авторского приоритета в системе BSMLH с применением биометрической идентификации NFC-чипа.
+      <div class="cert-verified">✓ BSMLH VERIFIED</div>
+    </div>
+    <button class="btn" onclick="window.print()" style="margin-bottom:10px;">🖨️ Сохранить как PDF</button>
+    <button class="btn-ghost" onclick="closeCert()">← Назад</button>
+  </div>
+</div>
+
+<!-- ── ТОСТ ── -->
+<div class="toast" id="toast"></div>
+
+<!-- ── СКРИПТЫ (в конце — не блокируют загрузку) ── -->
+<script src="js/app.js"></script>
+<script src="js/jobs.js"></script>
+<script src="js/map.js"></script>
+<script src="js/nfc.js"></script>
+<script src="js/patent.js"></script>
+<script src="js/firebase.js"></script>
+
+<script>
+// Загрузить Firebase через 2 сек после загрузки страницы
+setTimeout(function(){ loadFirebase(); setTimeout(initJobsDB, 3000); }, 2000);
+</script>
+
+</body>
+</html>
