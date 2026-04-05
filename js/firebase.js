@@ -67,8 +67,8 @@ function loadFirebase() {
     'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js',
     'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js',
     'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js',
-    'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-messaging-sw.js'
-  ];
+    'https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js'
+      ];
   function loadNext(index) {
     if (index >= scripts.length) {
       initFirebase();
