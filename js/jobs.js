@@ -171,6 +171,7 @@ function completeJobEmployer(jobId, workerHuid) {
               addToken(workerHuid, 'qrt', 1);
               addToken(U.huid, 'qrt', 0.1);
               T('🎉 Заказ завершён! Начислены QRT');
+              if (typeof loadWorkersOnMap === 'function') loadWorkersOnMap();
               setTimeout(function(){
                 openRating(jobId, workerHuid, j2.selectedWorkerName || 'Работник', 'employer');
               }, 800);
@@ -194,6 +195,7 @@ function completeJobWorker(jobId, employerHuid) {
         addToken(U.huid, 'qrt', 1);
         addToken(employerHuid, 'qrt', 0.1);
         T('🎉 Заказ завершён! Начислены QRT');
+        if (typeof loadWorkersOnMap === 'function') loadWorkersOnMap();
         setTimeout(function(){
           openRating(jobId, employerHuid, j.employer, 'worker');
         }, 800);
@@ -207,6 +209,7 @@ function completeJobWorker(jobId, employerHuid) {
               addToken(U.huid, 'qrt', 1);
               addToken(employerHuid, 'qrt', 0.1);
               T('🎉 Заказ завершён! Начислены QRT');
+              if (typeof loadWorkersOnMap === 'function') loadWorkersOnMap();
               setTimeout(function(){
                 openRating(jobId, employerHuid, j2.employer, 'worker');
               }, 800);
@@ -237,6 +240,7 @@ function loadJobs() {
       var btn = '';
       if (j.status === 'done') {
         btn = '<div style="margin-top:10px;font-size:13px;color:#059669;text-align:center;padding:8px;background:#D1FAE5;border-radius:8px;font-weight:600;">✅ Заказ завершён</div>';
+        if (typeof loadWorkersOnMap === 'function') loadWorkersOnMap();
       } else if (j.status === 'closed') {
         if (isSelected) {
           var confirmBtn = j.confirmedWorker
