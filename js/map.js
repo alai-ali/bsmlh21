@@ -24,7 +24,6 @@ function createMap() {
   var mapEl = document.getElementById('map-container');
   if (!mapEl) return;
 
-  // Заменяем iframe на div для Leaflet
   var newDiv = document.createElement('div');
   newDiv.id = 'map-container';
   newDiv.style.cssText = 'width:100%;height:50vh;min-height:300px;border-radius:16px;border:none;margin-bottom:12px;';
@@ -97,7 +96,7 @@ function loadWorkersOnMap() {
     return;
   }
 
-  // Работники
+  // Синие точки — работники
   var refW = firebase.database().ref('workers');
   var queryW = currentFilter ? refW.orderByChild('category').equalTo(currentFilter) : refW;
   queryW.once('value', function(snap) {
@@ -108,25 +107,19 @@ function loadWorkersOnMap() {
     });
   });
 
-  // Работодатели (открытые заказы)
-  if (!currentFilter) {
-    firebase.database().ref('jobs').once('value', function(snap) {
-      var jobs = snap.val() || {};
-      Object.values(jobs).filter(function(j){ return j.status === 'open' && j.lat && j.lng; })
-        .forEach(function(j) {
-          addWorkerMarker({
-            name: j.employer,
-            category: j.category,
-            lat: j.lat, lng: j.lng,
-            isEmployer: true,
-            title: j.title,
-            price: j.price
-          });
-        });
+  // Красные точки — открытые заказы
+  firebase.database().ref('jobs').once('value', function(snap) {
+    var jobs = snap.val() || {};
+    Object.values(jobs).filter(function(j) {
+      var catOk = !currentFilter || j.category === currentFilter;
+      return j.status === 'open' && j.lat && j.lng && catOk;
+    }).forEach(function(j) {
+      addJobMarker(j);
     });
-  }
+  });
 }
 
+// Демо если Firebase недоступен
 function showDemoWorkers() {
   var demos = [
     { name:'Айгерим', category:'clean', icon:'🧹', lat:43.245, lng:76.895, rating:4.8, qrnc:42 },
@@ -140,13 +133,13 @@ function showDemoWorkers() {
     .forEach(function(w){ addWorkerMarker(w); });
 }
 
+// 🔵 СИНЯЯ иконка — работник
 function addWorkerMarker(w) {
   var cat = mapCategories.find(function(c){ return c.id === w.category; }) || { icon:'👤' };
-  var displayIcon = w.isEmployer ? '👔' : (w.icon || cat.icon);
-  var borderColor = w.isEmployer ? '#2563EB' : '#21A038';
+  var displayIcon = w.icon || cat.icon || '👤';
 
   var icon = L.divIcon({
-    html: '<div style="width:44px;height:44px;border-radius:50%;background:white;border:3px solid '+borderColor+';display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 2px 8px rgba(0,0,0,0.2);">' + displayIcon + '</div>',
+    html: '<div style="width:44px;height:44px;border-radius:50%;background:white;border:3px solid #2563EB;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 2px 8px rgba(37,99,235,0.3);">' + displayIcon + '</div>',
     className: '',
     iconSize: [44, 44],
     iconAnchor: [22, 22]
@@ -156,32 +149,57 @@ function addWorkerMarker(w) {
   marker.on('click', function() { showWorkerCard(w); });
 }
 
+// 🔴 КРАСНАЯ иконка — заказ
+function addJobMarker(j) {
+  var cat = mapCategories.find(function(c){ return c.id === j.category; }) || { icon:'💼' };
+  var displayIcon = cat.icon || '💼';
+
+  var icon = L.divIcon({
+    html: '<div style="width:44px;height:44px;border-radius:50%;background:white;border:3px solid #EF4444;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 2px 8px rgba(239,68,68,0.3);">' + displayIcon + '</div>',
+    className: '',
+    iconSize: [44, 44],
+    iconAnchor: [22, 22]
+  });
+
+  var marker = L.marker([j.lat, j.lng], { icon: icon }).addTo(workersLayer);
+  marker.on('click', function() { showJobCard(j); });
+}
+
+// Карточка работника
 function showWorkerCard(w) {
   var panel = document.getElementById('worker-card');
   if (!panel) return;
   var cat = mapCategories.find(function(c){ return c.id === w.category; }) || { icon:'👤', name:'Другое' };
+  panel.innerHTML =
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">'
+    + '<div style="width:56px;height:56px;border-radius:50%;background:#EFF6FF;border:2px solid #2563EB;display:flex;align-items:center;justify-content:center;font-size:24px;">' + (w.icon||cat.icon) + '</div>'
+    + '<div style="flex:1;">'
+    + '<div style="font-size:17px;font-weight:700;">' + w.name + '</div>'
+    + '<div style="font-size:13px;color:#2563EB;font-weight:600;">' + cat.name + '</div>'
+    + '<div style="font-size:12px;color:var(--text2);">⭐ ' + (w.rating||'—') + ' · 🏅 ' + (w.qrnc||0) + ' QRNC</div>'
+    + '</div>'
+    + '<button onclick="document.getElementById(\'worker-card\').style.display=\'none\'" style="background:none;border:none;font-size:20px;cursor:pointer;">✕</button>'
+    + '</div>'
+    + '<button class="btn" onclick="openWorkerChat(\'' + (w.huid||'') + '\',\'' + w.name + '\')">💬 Написать</button>';
+  panel.style.display = 'block';
+}
 
-  if (w.isEmployer) {
-    panel.innerHTML =
-      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">'
-      + '<div style="width:56px;height:56px;border-radius:50%;background:#EFF6FF;border:2px solid #2563EB;display:flex;align-items:center;justify-content:center;font-size:24px;">👔</div>'
-      + '<div><div style="font-size:17px;font-weight:700;">' + w.name + '</div>'
-      + '<div style="font-size:13px;color:#2563EB;font-weight:600;">' + (w.title||'') + '</div>'
-      + '<div style="font-size:12px;color:var(--text2);">💰 ' + (w.price||'—') + '</div></div>'
-      + '<button onclick="document.getElementById(\'worker-card\').style.display=\'none\'" style="margin-left:auto;background:none;border:none;font-size:20px;cursor:pointer;">✕</button>'
-      + '</div>'
-      + '<button class="btn" onclick="openPg(\'pg-jobs\')">📋 Смотреть заказы</button>';
-  } else {
-    panel.innerHTML =
-      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">'
-      + '<div style="width:56px;height:56px;border-radius:50%;background:var(--green-light);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:24px;">' + (w.icon||cat.icon) + '</div>'
-      + '<div><div style="font-size:17px;font-weight:700;">' + w.name + '</div>'
-      + '<div style="font-size:13px;color:var(--green);font-weight:600;">' + cat.name + '</div>'
-      + '<div style="font-size:12px;color:var(--text2);">⭐ ' + (w.rating||'—') + ' · 🏅 ' + (w.qrnc||0) + ' QRNC</div></div>'
-      + '<button onclick="document.getElementById(\'worker-card\').style.display=\'none\'" style="margin-left:auto;background:none;border:none;font-size:20px;cursor:pointer;">✕</button>'
-      + '</div>'
-      + '<button class="btn" onclick="openWorkerChat(\'' + (w.huid||'') + '\',\'' + w.name + '\')">💬 Написать</button>';
-  }
+// Карточка заказа
+function showJobCard(j) {
+  var panel = document.getElementById('worker-card');
+  if (!panel) return;
+  var cat = mapCategories.find(function(c){ return c.id === j.category; }) || { icon:'💼', name:'Заказ' };
+  panel.innerHTML =
+    '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">'
+    + '<div style="width:56px;height:56px;border-radius:50%;background:#FEE2E2;border:2px solid #EF4444;display:flex;align-items:center;justify-content:center;font-size:24px;">' + (cat.icon||'💼') + '</div>'
+    + '<div style="flex:1;">'
+    + '<div style="font-size:17px;font-weight:700;">' + j.title + '</div>'
+    + '<div style="font-size:13px;color:#EF4444;font-weight:600;">💰 ' + j.price + '</div>'
+    + '<div style="font-size:12px;color:var(--text2);">👔 ' + j.employer + ' · ' + (j.location||'') + '</div>'
+    + '</div>'
+    + '<button onclick="document.getElementById(\'worker-card\').style.display=\'none\'" style="background:none;border:none;font-size:20px;cursor:pointer;">✕</button>'
+    + '</div>'
+    + '<button class="btn" onclick="document.getElementById(\'worker-card\').style.display=\'none\';openPg(\'pg-jobs\')">📋 Откликнуться</button>';
   panel.style.display = 'block';
 }
 
@@ -190,6 +208,7 @@ function openWorkerChat(huid, name) {
   openJobChat('direct_' + Date.now(), huid, name);
 }
 
+// Кнопка "Я ищу работу"
 function shareMyLocation() {
   if (!navigator.geolocation) { T('Геолокация недоступна'); return; }
   T('Определяем местоположение...');
