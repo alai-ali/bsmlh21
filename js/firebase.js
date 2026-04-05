@@ -66,7 +66,8 @@ function loadFirebase() {
     'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
     'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js',
     'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js',
-    'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js'
+    'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js',
+    'https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js'
   ];
   function loadNext(index) {
     if (index >= scripts.length) {
@@ -101,5 +102,22 @@ function initFirebase() {
     true
   );
   console.log('Firebase готов');
+  const messaging = firebase.messaging();
+  messaging.getToken({ 
+    vapidKey: 'BCIMB9NXsy3xOK4xm0NgS7Hx4pWu7HFQy4rVp8hs710qSG0cbkSBJh77ceVMN9vKLi8jFzhKvtZE0QIu3-isrSw' 
+  }).then((currentToken) => {
+    if (currentToken) {
+      console.log('Токен получен:', currentToken);
+      // Тут можно сохранить токен в базу данных к пользователю
+    } else {
+      console.log('Нужно разрешение на уведомления');
+    }
+  }).catch((err) => {
+    console.log('Ошибка получения токена: ', err);
+  });
+  // -----------------------------------
+
+  setTimeout(initJobsDB, 300);
+}
   setTimeout(initJobsDB, 300);
 }
