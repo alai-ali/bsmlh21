@@ -278,14 +278,26 @@ function loadJobs() {
 }
 
 function applyToJob(jobId, btn) {
+  if (!jobId) { T('Ошибка: заказ не найден'); return; }
+  if (!U || !U.huid) { T('Ошибка авторизации'); return; }
   if (btn) btn.disabled = true;
-  var key = U.huid.replace(/[^a-zA-Z0-9]/g,'');
-  firebase.database().ref('jobs/' + jobId + '/applicants/' + key).set({
-    name: U.name, huid: U.huid, appliedAt: Date.now(), status: 'pending'
-  }).then(function() {
-    T('✅ Отклик отправлен!');
-    loadJobs();
-  }).catch(function(e){ T('Ошибка: ' + e.message); });
+
+  safeFirebase(function() {
+    var key = U.huid.replace(/[^a-zA-Z0-9]/g,'');
+    firebase.database().ref('jobs/' + jobId + '/applicants/' + key).set({
+      name: U.name, huid: U.huid, appliedAt: Date.now(), status: 'pending'
+    }).then(function() {
+      T('✅ Отклик отправлен!');
+      loadJobs();
+    }).catch(function(e){
+      T('Ошибка отклика. Попробуйте снова.');
+      console.error('applyToJob error:', e);
+      if (btn) btn.disabled = false;
+    });
+  }, function() {
+    T('Нет соединения с сервером');
+    if (btn) btn.disabled = false;
+  });
 }
 
 // ДЕТАЛИ ЗАКАЗА
