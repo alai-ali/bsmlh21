@@ -1,23 +1,31 @@
+// --- ФУНКЦИЯ ОТПРАВКИ SMS ---
 function sendSMS() {
   var inp = el('sms-phone');
   var phone = inp ? inp.value.trim() : '';
   if (!phone) { T('Введите номер телефона'); return; }
   if (!phone.startsWith('+')) phone = '+7' + phone.replace(/[^0-9]/g, '');
   if (!window.firebase) { T('Подождите, загрузка...'); return; }
+  
   T('Отправляем код...');
+  
   if (window.recaptchaVerifier) {
     try { window.recaptchaVerifier.clear(); } catch(e) {}
     window.recaptchaVerifier = null;
   }
+
   var old = document.getElementById('rc-tmp');
   if (old) old.remove();
+  
   var rc = document.createElement('div');
   rc.id = 'rc-tmp';
   rc.style.cssText = 'position:fixed;bottom:-200px;opacity:0;pointer-events:none;';
   document.body.appendChild(rc);
+
   window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('rc-tmp', {
-    size: 'invisible', callback: function() {}
+    size: 'invisible', 
+    callback: function() {}
   });
+
   firebase.auth().signInWithPhoneNumber(phone, window.recaptchaVerifier)
     .then(function(cr) {
       window.confirmationResult = cr;
@@ -36,10 +44,12 @@ function sendSMS() {
     });
 }
 
+// --- ФУНКЦИЯ ПРОВЕРКИ КОДА ---
 function verifySMS() {
   var code = el('sms-code');
   if (!code || !code.value.trim()) { T('Введите код'); return; }
   if (!window.confirmationResult) { T('Сначала отправьте код'); return; }
+  
   window.confirmationResult.confirm(code.value.trim())
     .then(function(result) {
       U.phone = result.user.phoneNumber;
@@ -59,6 +69,7 @@ function verifySMS() {
     .catch(function() { T('Неверный код'); });
 }
 
+// --- ЗАГРУЗКА БИБЛИОТЕК ---
 function loadFirebase() {
   if (window._firebaseLoading) return;
   window._firebaseLoading = true;
@@ -86,8 +97,10 @@ function loadFirebase() {
   loadNext(0);
 }
 
+// --- ИНИЦИАЛИЗАЦИЯ И PUSH ---
 function initFirebase() {
   if (firebase.apps.length) return;
+  
   firebase.initializeApp({
     apiKey: 'AIzaSyBlD8lNdYdubHXr13IhPkmkCnNQQLChtVA',
     authDomain: 'bsmlh-chat.firebaseapp.com',
@@ -97,23 +110,38 @@ function initFirebase() {
     messagingSenderId: '41774666354',
     appId: '1:41774666354:web:e200d57a0bab89e26be8eb'
   });
-  firebase.appCheck().activate(
-    '6LdAw6AsAAAAAPpIARwm1C0pl3-hToekBX2NxLFv',
-    true
-  );
+
+  // Защита App Check
+  try {
+    firebase.appCheck().activate(
+      '6LdAw6AsAAAAAPpIARwm1C0pl3-hToekBX2NxLFv',
+      true
+    );
+  } catch(e) { console.log('AppCheck skip'); }
+
   console.log('Firebase готов');
-  const messaging = firebase.messaging();
-  messaging.getToken({ 
-    vapidKey: 'BCIMB9NXsy3xOK4xm0NgS7Hx4pWu7HFQy4rVp8hs710qSG0cbkSBJh77ceVMN9vKLi8jFzhKvtZE0QIu3-isrSw' 
-  }).then((currentToken) => {
-    if (currentToken) {
-      console.log('Токен получен:', currentToken);
-      // Тут можно сохранить токен в базу данных к пользователю
-    } else {
-      console.log('Нужно разрешение на уведомления');
-    }
-  }).catch((err) => {
-    console.log('Ошибка получения токена: ', err);
-  });
-   setTimeout(initJobsDB, 300);
+
+  // Работа с токеном уведомлений
+  try {
+    const messaging = firebase.messaging();
+    messaging.getToken({ 
+      vapidKey: 'BCIMB9NXsy3xOK4xm0NgS7Hx4pWu7HFQy4rVp8hs710qSG0cbkSBJh77ceVMN9vKLi8jFzhKvtZE0QIu3-isrSw' 
+    }).then(function(currentToken) {
+      if (currentToken) {
+        console.log('Токен получен:', currentToken);
+        // Сохраняем токен в базу данных, если юзер залогинен
+        if (window.U && window.U.uid) {
+           firebase.database().ref('users/' + U.uid + '/pushToken').set(currentToken);
+        }
+      } else {
+        console.log('Нужно разрешение на уведомления');
+      }
+    }).catch(function(err) {
+      console.log('Ошибка токена: ', err);
+    });
+  } catch(e) {
+    console.log('Push-уведомления не поддерживаются');
+  }
+
+  if (typeof initJobsDB === 'function') setTimeout(initJobsDB, 300);
 }
