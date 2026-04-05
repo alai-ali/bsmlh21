@@ -71,42 +71,39 @@ function selectJobCategory(catId) {
 }
 
 function postNewJob() {
-  var title = el('jp-title').value.trim();
-  var desc = el('jp-desc').value.trim();
-  var price = el('jp-price').value.trim();
-  var location = el('jp-location').value.trim();
+  var title = el('jp-title') ? el('jp-title').value.trim() : '';
+  var desc = el('jp-desc') ? el('jp-desc').value.trim() : '';
+  var price = el('jp-price') ? el('jp-price').value.trim() : '';
+  var location = el('jp-location') ? el('jp-location').value.trim() : '';
   if (!title) { T('Введите название заказа'); return; }
   if (!desc) { T('Опишите задание'); return; }
   if (!price) { T('Укажите оплату'); return; }
+  if (!U || !U.huid) { T('Ошибка авторизации'); return; }
 
   function publishJob(lat, lng) {
-    var job = {
-      id: Date.now().toString(36).toUpperCase(),
-      title: title, desc: desc, price: price,
-      location: location || 'Удалённо',
-      category: selectedCategory,
-      employer: U.name, employerHuid: U.huid,
-      status: 'open', createdAt: Date.now(), applicants: {},
-      lat: lat || null, lng: lng || null
-    };
-    firebase.database().ref('jobs/' + job.id).set(job).then(function() {
-      T('✅ Заказ опубликован!');
-      el('jobs-post-form').style.display = 'none';
-      el('jobs-employer-home').style.display = 'block';
-      loadMyJobs();
-      clearPostForm();
-    }).catch(function(e){ T('Ошибка: ' + e.message); });
-  }
-
-  if (navigator.geolocation) {
-    T('Определяем местоположение...');
-    navigator.geolocation.getCurrentPosition(
-      function(pos) { publishJob(pos.coords.latitude, pos.coords.longitude); },
-      function() { publishJob(null, null); },
-      { timeout: 5000 }
-    );
-  } else {
-    publishJob(null, null);
+    safeFirebase(function() {
+      var job = {
+        id: Date.now().toString(36).toUpperCase(),
+        title: title, desc: desc, price: price,
+        location: location || 'Удалённо',
+        category: selectedCategory,
+        employer: U.name, employerHuid: U.huid,
+        status: 'open', createdAt: Date.now(), applicants: {},
+        lat: lat || null, lng: lng || null
+      };
+      firebase.database().ref('jobs/' + job.id).set(job).then(function() {
+        T('✅ Заказ опубликован!');
+        el('jobs-post-form').style.display = 'none';
+        el('jobs-employer-home').style.display = 'block';
+        loadMyJobs();
+        clearPostForm();
+      }).catch(function(e){
+        T('Ошибка публикации. Попробуйте снова.');
+        console.error('postNewJob error:', e);
+      });
+    }, function() {
+      T('Нет соединения с сервером');
+    });
   }
 }
 
