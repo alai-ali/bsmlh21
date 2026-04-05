@@ -151,6 +151,7 @@ function switchTab(name) {
     var nb = el('nav-' + t);
     if (nb) nb.classList.toggle('on', t === name);
   });
+  if (name === 'map' && typeof initMap === 'function') initMap();
 }
 
 // ── ФИД ──
