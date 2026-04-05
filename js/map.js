@@ -86,6 +86,22 @@ function filterMapWorkers(catId) {
   renderMapFilters();
   loadWorkersOnMap();
 }
+// Переключатель: показать только заказы или только работников
+var showJobsOnly = false;
+var showWorkersOnly = false;
+
+function showOnlyJobs(jobsOnly) {
+  if (jobsOnly) {
+    showJobsOnly = true;
+    showWorkersOnly = false;
+    T('📋 Показаны заказы работодателей');
+  } else {
+    showJobsOnly = false;
+    showWorkersOnly = true;
+    T('🧑‍💼 Показаны работники');
+  }
+  loadWorkersOnMap();
+}
 
 function loadWorkersOnMap() {
   if (!map || !workersLayer) return;
@@ -96,27 +112,31 @@ function loadWorkersOnMap() {
     return;
   }
 
-  // Синие точки — работники
-  var refW = firebase.database().ref('workers');
-  var queryW = currentFilter ? refW.orderByChild('category').equalTo(currentFilter) : refW;
-  queryW.once('value', function(snap) {
-    var workers = snap.val() || {};
-    Object.values(workers).forEach(function(w) {
-      if (!w.lat || !w.lng) return;
-      addWorkerMarker(w);
+  // Синие точки — работники (только если не режим "только заказы")
+  if (!showJobsOnly) {
+    var refW = firebase.database().ref('workers');
+    var queryW = currentFilter ? refW.orderByChild('category').equalTo(currentFilter) : refW;
+    queryW.once('value', function(snap) {
+      var workers = snap.val() || {};
+      Object.values(workers).forEach(function(w) {
+        if (!w.lat || !w.lng) return;
+        addWorkerMarker(w);
+      });
     });
-  });
+  }
 
-  // Красные точки — открытые заказы
-  firebase.database().ref('jobs').once('value', function(snap) {
-    var jobs = snap.val() || {};
-    Object.values(jobs).filter(function(j) {
-      var catOk = !currentFilter || j.category === currentFilter;
-      return j.status === 'open' && j.lat && j.lng && catOk;
-    }).forEach(function(j) {
-      addJobMarker(j);
+  // Красные точки — заказы (только если не режим "только работники")
+  if (!showWorkersOnly) {
+    firebase.database().ref('jobs').once('value', function(snap) {
+      var jobs = snap.val() || {};
+      Object.values(jobs).filter(function(j) {
+        var catOk = !currentFilter || j.category === currentFilter;
+        return j.status === 'open' && j.lat && j.lng && catOk;
+      }).forEach(function(j) {
+        addJobMarker(j);
+      });
     });
-  });
+  }
 }
 
 // Демо если Firebase недоступен
