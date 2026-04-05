@@ -137,12 +137,15 @@ function loadMyJobs() {
 
 // ТОКЕНЫ
 function addToken(userHuid, type, amount) {
-  if (!userHuid) return;
-  var key = userHuid.replace(/[^a-zA-Z0-9]/g,'');
-  var ref = firebase.database().ref('tokens/' + key + '/' + type);
-  ref.once('value', function(snap) {
-    var cur = snap.val() || 0;
-    ref.set(Math.round((cur + amount) * 100000) / 100000);
+  if (!userHuid || !type || !amount) return;
+  safeFirebase(function() {
+    var key = userHuid.replace(/[^a-zA-Z0-9]/g,'');
+    var ref = firebase.database().ref('tokens/' + key + '/' + type);
+    ref.once('value', function(snap) {
+      var cur = snap.val() || 0;
+      ref.set(Math.round((cur + amount) * 100000) / 100000)
+        .catch(function(e){ console.error('addToken error:', e); });
+    }, function(e){ console.error('addToken read error:', e); });
   });
 }
 
