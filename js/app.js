@@ -1,3 +1,31 @@
+// ── ГЛОБАЛЬНАЯ ОБРАБОТКА ОШИБОК ──
+// Добавь В САМОЕ НАЧАЛО app.js, первой строкой
+
+window.onerror = function(msg, src, line, col, err) {
+  console.error('BSMLH Error:', msg, 'at', src, line);
+  // Не показываем пользователю технические ошибки
+  return true;
+};
+
+window.onunhandledrejection = function(e) {
+  console.error('BSMLH Promise Error:', e.reason);
+  e.preventDefault();
+};
+
+// Безопасная обёртка для Firebase операций
+function safeFirebase(fn, fallback) {
+  try {
+    if (!window.firebase || !firebase.apps || !firebase.apps.length) {
+      if (fallback) fallback();
+      return;
+    }
+    fn();
+  } catch(e) {
+    console.error('Firebase error:', e);
+    T('Ошибка соединения. Проверьте интернет.');
+    if (fallback) fallback();
+  }
+}
 // ── СОСТОЯНИЕ ПОЛЬЗОВАТЕЛЯ ──
 var U = { name:'', huid:'', phone:'', photo:'', hasChip:false, chipUID:'' };
 var curLv = 1;
