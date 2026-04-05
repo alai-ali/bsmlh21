@@ -371,14 +371,9 @@
       <!-- Карта -->
 <div id="map-container" style="width:100%;height:50vh;min-height:300px;border-radius:16px;border:none;margin-bottom:12px;"></div>
       <div style="display:flex;gap:8px;">
-        <button class="btn" style="flex:1;padding:12px;" onclick="shareMyLocation()">📍 Я ищу работу</button>
-        <button class="btn-ghost" style="flex:1;padding:12px;" onclick="showCategorySelect()">🎯 Моя специальность</button>
-      </div>
-      <!-- Выбор специальности -->
-      <div id="my-cat-panel" style="display:none;margin-top:12px;" class="card">
-        <div class="section-title">Выберите специальность</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;" id="my-cat-list"></div>
-      </div>
+  <button class="btn" style="flex:1;padding:12px;" onclick="shareMyLocation();showOnlyJobs(false)">🧑‍💼 Я ищу работу</button>
+  <button class="btn-ghost" style="flex:1;padding:12px;" onclick="showOnlyJobs(true)">📋 Дать заказ</button>
+</div>
       <!-- Карточка работника -->
       <div id="worker-card" style="display:none;position:fixed;bottom:80px;left:16px;right:16px;background:white;border-radius:20px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:1500;"></div>
     </div>
