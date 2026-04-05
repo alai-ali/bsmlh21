@@ -115,9 +115,5 @@ function initFirebase() {
   }).catch((err) => {
     console.log('Ошибка получения токена: ', err);
   });
-  // -----------------------------------
-
-  setTimeout(initJobsDB, 300);
-}
-  setTimeout(initJobsDB, 300);
+   setTimeout(initJobsDB, 300);
 }
